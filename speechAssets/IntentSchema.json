@@ -1,0 +1,76 @@
+{
+  "intents": [
+    {
+      "intent": "PauseIntent",
+      "slots": []
+    },
+    {
+      "intent": "UnPauseIntent",
+      "slots": []
+    },{
+      "intent": "StopIntent",
+      "slots": []
+    },
+    {
+      "intent": "SearchMoviesIntent",
+      "slots": [
+        {
+          "name": "MovieName",
+          "type": "LITERAL"
+        }
+      ]
+    },
+    {
+      "intent": "FastFormwardIntent",
+       "slots": [
+        {
+          "name": "Seconds",
+            "type": "NUMBER"
+        },
+        {
+          "name": "Minutes",
+           "type": "NUMBER"
+        }
+      ]
+    },
+    {
+      "intent": "RewindIntent",
+      "slots": [
+        {
+          "name": "Seconds",
+            "type": "NUMBER"
+        },
+        {
+          "name": "Minutes",
+           "type": "NUMBER"
+        }
+      ]
+    },
+    {
+      "intent": "PlayLastEpisodeOfIntent",
+      "slots": [
+        {
+          "name": "TvName",
+          "type": "LITERAL"
+        }
+      ]
+    },
+    {
+      "intent": "PlayRandomIntent",
+      "slots": [
+        {
+          "name": "TvName",
+          "type": "LITERAL"
+        },
+        {
+          "name": "Season",
+          "type": "NUMBER"
+        }
+      ]
+    },
+    {
+      "intent": "HelpIntent",
+      "slots": []
+    }
+  ]
+}

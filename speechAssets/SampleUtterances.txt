@@ -1,0 +1,50 @@
+PauseIntent pause
+
+UnPauseIntent play
+
+StopIntent stop
+StopIntent shut-up
+
+SearchMoviesIntent search for {Harry|MovieName}
+SearchMoviesIntent serach movies for {Harry|MovieName}
+SearchMoviesIntent serach movies for {Die Hard|MovieName}
+SearchMoviesIntent serach movies for {The Guardians of the Galaxy|MovieName}
+
+SearchMoviesIntent find {Harry|MovieName}
+SearchMoviesIntent play {Harry|MovieName}
+
+FastFormwardIntent fast forward {ten|Seconds} seconds
+FastFormwardIntent fast forward {ten|Minutes} minutes
+
+RewindIntent rewind {ten|Seconds} seconds
+RewindIntent rewind {ten|Minutes} minutes
+
+PlayLastEpisodeOfIntent play last episode of {Harry|TvName}
+PlayLastEpisodeOfIntent play tv show of {Harry|TvName}
+PlayLastEpisodeOfIntent play episode of {Harry|TvName}
+
+PlayRandomIntent play a random {louie|TvName} 
+PlayRandomIntent play a random {looney tunes|TvName} 
+PlayRandomIntent play a random {curb your enthusiasm|TvName} 
+PlayRandomIntent play a random {adventure time|TvName} 
+
+PlayRandomIntent play a random {louie|TvName} from season {Six|Season}
+PlayRandomIntent play a random {looney tunes|TvName} from season {Six|Season}
+PlayRandomIntent play a random {curb your enthusiasm|TvName} from season {Six|Season}
+PlayRandomIntent play a random {adventure time|TvName} from season {Six|Season}
+
+
+HelpIntent help
+HelpIntent help me
+HelpIntent what can I ask you
+HelpIntent get help
+HelpIntent what commands can I ask
+HelpIntent what commands can I say
+HelpIntent what can I do
+HelpIntent what can I use this for
+HelpIntent what questions can I ask
+HelpIntent what can you do
+HelpIntent what do you do
+HelpIntent how do I use you
+HelpIntent how can I use you
+HelpIntent what can you tell me
