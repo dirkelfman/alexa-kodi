@@ -15,17 +15,28 @@ process.env['AWS_REGION'] = 'us-west-2'
 var fs = require('fs');
 var app = require('./app');
 
-// Load the sample event to be passed to Lambda. The _sampleEvent.json file can be modified to match
+// Load the sample events to be passed to Lambda. The _sampleEvent.json file can be modified to match
 // what you want Lambda to process on.
-var event = JSON.parse(fs.readFileSync('./testJson/_sampleEvent.json', 'utf8').trim());
+var events = fs.readdirSync('./testJson').map(function (file) {
+    return JSON.parse(fs.readFileSync('./testJson/'+file, 'utf8').trim());
+});
+
+//var event = JSON.parse(fs.readFileSync('./testJson/_sampleEvent.json', 'utf8').trim());
 var util = require('util');
 var context = {};
+var idx = 0;
 context.done = function () {
     console.log("Lambda Function Complete");
 }
-
 context.succeed = function () {
     console.log("alexa Succeded", util.inspect(arguments, { showHidden: true, depth: 5 }));
+    idx++
+    if (idx < events.length  ) {
+        app.handler(events[idx], context);
+    } else {
+        console.log('finished');
+        process.exit(0);
+    }
 }
+app.handler(events[idx], context);
 
-app.handler(event, context);

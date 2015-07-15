@@ -69,6 +69,17 @@
       ]
     },
     {
+      
+      "intent": "NumberIntent",
+      "slots": [
+        {
+          "name": "Number",
+          "type": "NUMBER"
+        }
+        
+      ]
+    }
+    {
       "intent": "HelpIntent",
       "slots": []
     }

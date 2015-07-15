@@ -46,7 +46,8 @@
     <Content Include="config.json" />
     <Content Include="speechAssets\IntentSchema.json" />
     <Content Include="speechAssets\SampleUtterances.txt" />
-    <Content Include="testJson\_sampleEvent.json" />
+    <Content Include="testJson\_partialShow.json" />
+    <Content Include="testJson\_randomShow.json" />
   </ItemGroup>
   <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsTools.targets" />
 </Project>

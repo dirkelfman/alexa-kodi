@@ -33,6 +33,8 @@ PlayRandomIntent play a random {looney tunes|TvName} from season {Six|Season}
 PlayRandomIntent play a random {curb your enthusiasm|TvName} from season {Six|Season}
 PlayRandomIntent play a random {adventure time|TvName} from season {Six|Season}
 
+NumberIntent number {one|Number}
+NumberIntent show {one|Number}
 
 HelpIntent help
 HelpIntent help me

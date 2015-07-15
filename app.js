@@ -1,7 +1,7 @@
 ﻿/**
  * App ID for the skill
  */
-var APP_ID = undefined; //replace with 'amzn1.echo-sdk-ams.app.[your-unique-value-here]';
+var APP_ID = null; //replace with 'amzn1.echo-sdk-ams.app.[your-unique-value-here]';
 
 //ARN - arn:aws:lambda:us-east-1:663361677957:function:Kodi_Skill
 
@@ -12,7 +12,15 @@ var when = require('when');
  * The AlexaSkill prototype and helper functions
  */
 var AlexaSkill = require('./AlexaSkill');
-var appConfig = require('./config');
+
+var appConfig = null;
+try {
+    appConfig = require('./config');
+}
+catch (e) {
+    throw new Error('needs ./config.json in the format of { "host": "hostName", "port": tpcPort }');
+}
+
 
 var KeyConstants = {
     ContinueAction : 'ContinueAction',
@@ -21,8 +29,84 @@ var KeyConstants = {
     Movie : 'Movie',
     Season : 'Season',
     ChoiceType : 'ChoiceType',
-    MovieChoice : "MovieChoice"
+    ShowChoice: 'ShowChoice',
+    MovieChoice : "MovieChoice",
+    ContinueIntent:"ContinueIntent"
 };
+
+var KodiContext = function(intent, session, response){
+    this._response = response;
+    this._intent = intent;
+    this._session = session;
+    this._client = null;
+};
+
+KodiContext.prototype.setResponseMessage = function (responseType, params) {
+    this.bufferFn = function () {
+        this.closeClient();
+        this._response[responseType].apply(this._response, params);
+    };
+    if (!this.buffer) {
+        this.bufferFn();
+    }
+};
+
+KodiContext.prototype.tell = function (){
+    this.setResponseMessage('tell', arguments);
+};
+
+KodiContext.prototype.tellWithCard = function () {
+    this.setResponseMessage('tellWithCard', arguments);
+};
+
+KodiContext.prototype.ask = function () {
+    this.setResponseMessage('ask', arguments);
+};
+
+KodiContext.prototype.askWithCard = function () {
+    this.setResponseMessage('askWithCard', arguments);
+};
+
+KodiContext.prototype.closeClient = function() {
+    if (this._client) {
+        this._client.close();
+    }
+};
+
+
+
+
+KodiContext.prototype.flush = function () {
+    if (this.bufferFn) {
+        this.bufferFn();
+    }
+    this.bufferFn = null;
+};
+
+KodiContext.prototype.getClient = function () {
+    if (!this._client) {
+        this._client = new SimpleXBMC(appConfig.host, appConfig.port);
+    }
+    return this._client;
+};
+
+KodiContext.prototype.setField = function (key,value) {
+    this._session.attributes[key] = value;
+};
+
+KodiContext.prototype.getField = function (key, defaultValue){
+    var ret = this._intent.slots[key] && this._intent.slots[key].value;
+    if (ret !== undefined && ret !== null ) {
+        this._session.attributes[key] = ret;
+    } else {
+        ret = this._session.attributes[key];
+    }
+    return ret;
+};
+
+
+
+
 /**
      * KodiSkiLl is a child of AlexaSkill.
      * To read more about inheritance in JavaScript, see the link below.
@@ -80,9 +164,8 @@ KodiSkiLl.prototype.intentHandlers = {
         handleStopIntent(response);
     },
     NumberIntent : function (intent , session , response) {
-        
-        session[KeyConstants.ChoiceType] = intent.slots.Number.value;
-        var continueIntent = session[KeyConstants.ContinueIntent];
+        session.attributes[session.attributes[KeyConstants.ChoiceType]] = intent.slots.Number.value;
+        var continueIntent = session.attributes[KeyConstants.ContinueIntent];
         this.intentHandlers[continueIntent](intent, session, response);
     },
     SearchMoviesIntent: function (intent, session, response) {
@@ -102,8 +185,9 @@ KodiSkiLl.prototype.intentHandlers = {
         handlePlayRandomIntent(intent, session , response);
     },
     PlayRandomIntent: function (intent, session, response) {
-        
-        handlePlayRandomIntent(intent, response, response);
+        session.attributes[KeyConstants.ContinueIntent] = 'PlayRandomIntent';
+        var context = new KodiContext(intent, session, response);
+        handlePlayRandomIntent(context);
     },
     
     PlayLatestIntent: function () {
@@ -207,7 +291,7 @@ function handleFastFormwardIntent(intent, response, forRewind) {
     });
 }
 
-function getEpisodes(client, tvShowId, season) {
+function getEpisodes(context, tvShowId, season) {
     var req = {
         tvshowid: tvShowId,
         properties: ['title'],
@@ -218,29 +302,29 @@ function getEpisodes(client, tvShowId, season) {
         req.season = season;
     }
     return when.promise(function (resolve, reject) {
-        client.videoLibrary.getEpisodes(req, function (resp, error) {
+        context.getClient().videoLibrary.getEpisodes(req, function (resp, error) {
             if (resp) {
                 resolve(resp);
             } else {
-                reject(error)
+                reject(error);
             }
         });
     });
 }
 
-function playItem(client , item) {
+function playItem(context , item) {
     return when.promise(function (resolve, reject) {
-        client.player.open([item], function (resp, error) {
+        context.getClient().player.open([item], function (resp, error) {
             if (resp) {
                 resolve(resp);
             } else {
-                reject(error)
+                reject(error);
             }
         });
     });
 }
 
-function getShowsByName(client, tvShow) {
+function getShowsByName(context, tvShow) {
     
     var req = {
         properties: ['title'],
@@ -255,66 +339,56 @@ function getShowsByName(client, tvShow) {
         }
     };
     return when.promise(function (resolve, reject) {
-        client.videoLibrary.getTVShows(req, function (resp, error) {
+        context.getClient().videoLibrary.getTVShows(req, function (resp, error) {
             if (resp) {
                 resolve(resp);
             } else {
-                reject(error)
+                reject(error);
             }
         });
     });
 
 }
 
-function respond(config) {
-    if (config.client) {
-        config.client.close();
-    }
-    if (config.fn) {
-        config.fn.apply(config.response, config.args);
-    }
-}
 
 
-function handlePlayRandomIntent(intent, session, response) {
+
+function handlePlayRandomIntent(context) {
     
-    var tvShowQuery , season;
-    session[KeyConstants.TvName] = tvShowQuery = getValueFromIntentOrSession(KeyConstants.TvName, intent , session);
-    session[KeyConstants.Season] = season = getValueFromIntentOrSession(KeyConstants.Season, intent , session);
-    
-    
-    var client = getClient();
-    //todo:  make class
-    var responseCfg = {
-        response: response,
-        client : client
-    };
-    
-    var episode = null;
-    var promise = getShowsByName(client, tvShowQuery)
+    context.buffer = true;
+    var tvShowQuery = context.getField(KeyConstants.TvName),
+        season = context.getField(KeyConstants.Season),
+        episode = null;
+        
+    getShowsByName(context, tvShowQuery)
         .then(function (showsResp) {
         if (showsResp.tvshows.length === 1) {
-            return getEpisodes(client, showsResp.tvshows[0].tvshowid, season);
+            return getEpisodes(context, showsResp.tvshows[0].tvshowid, season);
         } else if (showsResp.tvshows.length > 0) {
+            var choice = context.getField(KeyConstants.ShowChoice);
+            if (choice) {
+                return getEpisodes(context, showsResp.tvshows[choice-1].tvshowid, season);
+            }
             var resp = "";
             for (var i = 0; i < showsResp.tvshows.length; i++) {
                 resp += 'say show ' + (i + 1) + ' for ' + showsResp.tvshows[i].title + '.  ';
             }
-            responseCfg.fn = response.ask;
-            responseCfg.args = [resp, resp];
+            context.setField(KeyConstants.ContinueIntent, 'PlayRandomIntent');
+            context.setField(KeyConstants.ChoiceType, KeyConstants.ShowChoice);
+            context.ask(resp, resp);
+            
         } else {
-            responseCfg.fn = response.tell;
-            responseCfg.args = ['show ' + tvShowQuery + ' not found'];
+            context.tell('show ' + tvShowQuery + ' not found');
         }
-        return promise.done(true);
+        
     }).then(function (episodeResp) {
         if (!episodeResp) {
             return;
         }
         var episodeNumber = Math.floor(Math.random() * episodeResp.episodes.length);
         episode = episodeResp.episodes[episodeNumber];
-        return playItem(client, {
-            "episodeid": episode.episodeid
+        return playItem(context, {
+            'episodeid': episode.episodeid
         });
        
     })
@@ -322,20 +396,15 @@ function handlePlayRandomIntent(intent, session, response) {
         if (!playResponse) {
             return;
         }
-        responseCfg.fn = response.tell;
-        responseCfg.args = ['playing ' + episode.title];
-
-         
+        context.tell('playing ' + episode.title);
     })
     .catch(function (error) {
         console.error(error);
     })
     .finally(function () {
-        respond(responseCfg);
+        context.flush();
     });
     
-
-
 }
 
 
