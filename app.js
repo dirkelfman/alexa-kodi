@@ -358,20 +358,29 @@ function handlePlayRandomIntent(context) {
     context.buffer = true;
     var tvShowQuery = context.getField(KeyConstants.TvName),
         season = context.getField(KeyConstants.Season),
-        episode = null;
+        choice = context.getField(KeyConstants.ShowChoice),
+        episode = null,
+        tvshowid = null,
+        processShows,
+        processEpisodes,
+        processPlay,
+        showsPromise;
         
-    getShowsByName(context, tvShowQuery)
-        .then(function (showsResp) {
+       
+    processShowsResult = function (showsResp) {
         if (showsResp.tvshows.length === 1) {
-            return getEpisodes(context, showsResp.tvshows[0].tvshowid, season);
+            return getEpisodes(context, showsResp.tvshows[0].tvshowid, season)
+                    .then(processEpisodes);
         } else if (showsResp.tvshows.length > 0) {
             var choice = context.getField(KeyConstants.ShowChoice);
             if (choice) {
-                return getEpisodes(context, showsResp.tvshows[choice-1].tvshowid, season);
+                var idx = KeyConstants.ShowChoice + (i + 1)
+                return getEpisodes(context, showsResp.tvshows[choice - 1].tvshowid, season);
             }
             var resp = "";
             for (var i = 0; i < showsResp.tvshows.length; i++) {
                 resp += 'say show ' + (i + 1) + ' for ' + showsResp.tvshows[i].title + '.  ';
+                context.setField(KeyConstants.ShowChoice + (i + 1) , showsResp.tvshows[i].tvshowid);
             }
             context.setField(KeyConstants.ContinueIntent, 'PlayRandomIntent');
             context.setField(KeyConstants.ChoiceType, KeyConstants.ShowChoice);
@@ -380,30 +389,33 @@ function handlePlayRandomIntent(context) {
         } else {
             context.tell('show ' + tvShowQuery + ' not found');
         }
-        
-    }).then(function (episodeResp) {
-        if (!episodeResp) {
-            return;
-        }
+    };
+    processEpisodes = function (episodeResp) {
         var episodeNumber = Math.floor(Math.random() * episodeResp.episodes.length);
         episode = episodeResp.episodes[episodeNumber];
         return playItem(context, {
             'episodeid': episode.episodeid
-        });
-       
-    })
-    .then(function (playResponse) {
-        if (!playResponse) {
-            return;
-        }
+        }).then(processPlay);
+    };
+    processPlay = function (playResponse) {
         context.tell('playing ' + episode.title);
-    })
-    .catch(function (error) {
-        console.error(error);
-    })
-    .finally(function () {
-        context.flush();
-    });
+    };
+    
+    if (choice) {
+        tvshowid = context.getField(KeyConstants.ShowChoice + choice);
+        showsPromise = when({ tvshows: [{ tvshowid: tvshowid }] });
+    } else {
+        showsPromise = getShowsByName(context, tvShowQuery);
+    }
+    
+    showsPromise
+        .then(processShowsResult)
+        .catch(function (error) {
+            console.error(error);
+        })
+        .finally(function () {
+            context.flush();
+        });
     
 }
 

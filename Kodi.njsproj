@@ -46,6 +46,7 @@
     <Content Include="config.json" />
     <Content Include="speechAssets\IntentSchema.json" />
     <Content Include="speechAssets\SampleUtterances.txt" />
+    <Content Include="testJson\_partialShowNumberCallback.json" />
     <Content Include="testJson\_partialShow.json" />
     <Content Include="testJson\_randomShow.json" />
   </ItemGroup>

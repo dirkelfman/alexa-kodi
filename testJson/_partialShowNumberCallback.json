@@ -1,0 +1,36 @@
+﻿{
+    "version": "1.0",
+    "session": {
+        "new": false,
+        "application": {
+            "applicationId": "amzn1.echo-sdk-ams.app.[unique-value-here]"
+        },
+        "sessionId": "session1234",
+        "attributes": {
+            "ContinueIntent": "PlayRandomIntent",
+            "TvName": "the",
+            "ShowChoice1": 73,
+            "ShowChoice2": 88,
+            "ShowChoice3": 94,
+            "ShowChoice4": 96,
+            "ShowChoice5": 100,
+            "ChoiceType": "ShowChoice"
+        },
+        "user": {
+            "userId": null
+        }
+    },
+    "request": {
+        "type": "IntentRequest",
+        "requestId": "request5678",
+        "intent": {
+            "name": "NumberIntent",
+            "slots": {
+                "Number": {
+                    "name": "Number",
+                    "value": 2
+                }
+            }
+        }
+    }
+}
